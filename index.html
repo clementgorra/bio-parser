@@ -17,133 +17,190 @@ button { padding: 10px 20px; margin-top: 10px; }
 
 <textarea id="input" placeholder="Colle ton bilan ici..."></textarea>
 <br>
-<button onclick="parseTable()">Générer</button>
+<button onclick="runParser()">Analyser bilan</button>
 
 <h3>Résultat :</h3>
 <pre id="output"></pre>
 
 <script>
 
-function parseTable() {
-    const raw = document.getElementById("input").value;
-
+// =====================
+// 1. PARSE TEXTE → TABLE
+// =====================
+function parseTable(raw) {
     const lines = raw.split("\n");
 
-    const table = lines
-        .map(line => line.trim())
-        .filter(line => line !== "")
-        .filter(line => !/^\d/.test(line)) // ignore notes
-        .map(line => line.split("¦").map(cell => cell.trim()));
-
-    displayTable(table);
+    return lines
+        .map(l => l.trim())
+        .filter(l => l !== "")
+        .filter(l => !/^\d/.test(l)) // ignore notes
+        .filter(l => !/^_+$/.test(l)) // ignore séparateurs
+        .filter(l => !l.toUpperCase().includes("TECHNIQUE"))
+        .filter(l => !l.toUpperCase().includes("REMARQUE"))
+        .map(l => l.split("¦").map(c => c.trim()));
 }
 
-function displayTable(table) {
-    let output = "";
 
-    table.forEach(row => {
-        output += row.join(" | ") + "\n";
-    });
+// =====================
+// 2. MAPPING
+// =====================
+const MAPPING = {
 
-    document.getElementById("output").textContent = output;
+    hb: ["Hémoglobine"],
+    vgm: ["Volume globulaire moyen"],
+    plaquettes: ["Plaquettes"],
+    leucocytes: ["Leucocytes"],
+    pnn: ["Polynucléaires neutrophiles"],
+
+    ph: ["pH (corrigé par la température)"],
+    po2: ["pO2 (corrigé par la température)"],
+    pco2: ["pCO2 (corrigé par la température)"],
+    bicarbonates_gaz: ["Bicarbonates (c)"],
+    lactates: ["Acide lactique"],
+
+    sodium: ["Sodium", "Sodium sur sang artériel"],
+    potassium: ["Potassium", "Potassium sur sang artériel"],
+    chlore: ["Chlore", "Chlore sur sang artériel"],
+    bicarbonates: ["Bicarbonates"],
+    protides: ["Protéines"],
+    albumine: ["Albumine"],
+    glucose: ["Glucose"],
+
+    uree: ["Urée"],
+    creatinine: ["Créatinine"],
+    dfg: ["DFGe", "DFG"],
+
+    crp: ["CRP"],
+
+    cpk: ["CK", "CK totale"],
+
+    troponine: ["Troponine"],
+    ntprobnp: ["NT-PROBNP"],
+
+    d_dimere: ["D Dimères"],
+
+    tp: ["Taux de Prothrombine"],
+    tca: ["Ratio du TCA"],
+
+    tgo: ["TGO"],
+    tgp: ["TGP"],
+    pal: ["Phosphatases alcalines"],
+    ggt: ["Gamma GT"],
+    bilirubine_totale: ["Bilirubine totale"],
+    bilirubine_directe: ["Bilirubine directe"]
+};
+
+
+// =====================
+// 3. EXTRACTION VALEUR
+// =====================
+function findValue(table, labels) {
+
+    for (let row of table) {
+        const firstCell = row[0] || "";
+
+        for (let label of labels) {
+
+            if (firstCell.toLowerCase().includes(label.toLowerCase())) {
+
+                // récup toutes les valeurs numériques de la ligne
+                const numbers = row.join(" ").match(/-?\d+[.,]?\d*/g);
+
+                if (numbers) {
+                    return numbers[numbers.length - 1].replace(",", ".");
+                }
+            }
+        }
+    }
+
+    return "";
 }
 
-function extractFirst(pattern, text) {
-    const regex = new RegExp(pattern, "gi");
-    const matches = [...text.matchAll(regex)];
-    return matches.length ? matches[0][1] : "";
+
+// =====================
+// 4. EXTRACTION COMPLETE
+// =====================
+function extractAll(table) {
+
+    const result = {};
+
+    for (let key in MAPPING) {
+        result[key] = findValue(table, MAPPING[key]);
+    }
+
+    return result;
 }
 
-function parseBio() {
-    const text = document.getElementById("input").value;
 
-    const data = {
-        hb: extractFirst("Hémoglobine[^\\d]*(\\d+\\.?\\d*)", text),
-        vgm: extractFirst("Volume globulaire moyen[^\\d]*(\\d+\\.?\\d*)", text),
-        plaquettes: extractFirst("Plaquettes[^\\d]*(\\d+\\.?\\d*)", text),
-        leucocytes: extractFirst("Leucocytes[^\\d]*(\\d+\\.?\\d*)", text),
-        pnn: extractFirst("Polynucléaires neutrophiles[^%]*(\\d+\\.?\\d*)", text),
+// =====================
+// 5. GENERATION TEXTE FINAL
+// =====================
+function generateOutput(d) {
 
-        ph: extractFirst("pH[^\\d]*(\\d+\\.?\\d*)", text),
-        po2: extractFirst("pO2[^\\d]*(\\d+\\.?\\d*)", text),
-        pco2: extractFirst("pCO2[^\\d]*(\\d+\\.?\\d*)", text),
-        hco3: extractFirst("Bicarbonates[^\\d]*(\\d+\\.?\\d*)", text),
-        lactates: extractFirst("lactique[^\\d]*(\\d+\\.?\\d*)", text),
-
-        na: extractFirst("Sodium[^\\d]*(\\d+\\.?\\d*)", text),
-        k: extractFirst("Potassium[^\\d]*(\\d+\\.?\\d*)", text),
-        cl: extractFirst("Chlore[^\\d]*(\\d+\\.?\\d*)", text),
-        protides: extractFirst("Protéines[^\\d]*(\\d+\\.?\\d*)", text),
-        albumine: extractFirst("Albumine[^\\d]*(\\d+\\.?\\d*)", text),
-        glucose: extractFirst("Glucose[^\\d]*(\\d+\\.?\\d*)", text),
-
-        uree: extractFirst("Urée[^\\d]*(\\d+\\.?\\d*)", text),
-        crea: extractFirst("Créatinine[^\\d]*(\\d+\\.?\\d*)", text),
-        dfg: extractFirst("DFG[^\\d]*(\\d+\\.?\\d*)", text),
-
-        crp: extractFirst("CRP[^\\d]*(\\d+\\.?\\d*)", text),
-        tropo: extractFirst("Troponine[^\\d]*(\\d+\\.?\\d*)", text),
-        ntprobnp: extractFirst("NT[- ]?PROBNP[^\\d]*(\\d+\\.?\\d*)", text),
-
-        tgo: extractFirst("TGO[^\\d]*(\\d+\\.?\\d*)", text),
-        tgp: extractFirst("TGP[^\\d]*(\\d+\\.?\\d*)", text),
-        ggt: extractFirst("Gamma GT[^\\d]*(\\d+\\.?\\d*)", text),
-        biliT: extractFirst("Bilirubine totale[^\\d]*(\\d+\\.?\\d*)", text),
-        biliD: extractFirst("Bilirubine directe[^\\d]*(\\d+\\.?\\d*)", text),
-
-        cpk: extractFirst("CK[^\\d]*(\\d+\\.?\\d*)", text),
-
-        tp: extractFirst("Taux de Prothrombine[^\\d]*(\\d+\\.?\\d*)", text),
-        tca: extractFirst("Ratio du TCA[^\\d]*(\\d+\\.?\\d*)", text)
-    };
-
-    const output = `
+return `
 Numération formule sanguine :
-- hémoglobine à ${data.hb} g/dL    
-            - VGM à ${data.vgm} fl            
-            - plaquettes à ${data.plaquettes} G/L               
-            - leucocytes à ${data.leucocytes} G/L
-            - dont ${data.pnn} % de PNN 
+- hémoglobine à ${d.hb} g/dL    
+            - VGM à ${d.vgm} fl            
+            - plaquettes à ${d.plaquettes} G/L               
+            - leucocytes à ${d.leucocytes} G/L
+            - dont ${d.pnn} % de PNN 
 
 Gazométrie :
-            - pH à ${data.ph}        
-            - pO2 à ${data.po2} mmHg        
-            - pCO2 à ${data.pco2} mmHg        
-            - Bicarbonates à ${data.hco3} mmol/l
-            - Lactates à ${data.lactates} mmol/l
+            - pH à ${d.ph}        
+            - pO2 à ${d.po2} mmHg        
+            - pCO2 à ${d.pco2} mmHg        
+            - Bicarbonates à ${d.bicarbonates_gaz} mmol/l
+            - Lactates à ${d.lactates} mmol/l
 
 Ionogramme :
-            - natrémie à ${data.na} mmol/l          
-            - kaliémie à ${data.k} mmol/l
-            - chlore à ${data.cl} mmol/l
-            - protides à ${data.protides} g/l
-            - albumine ${data.albumine} g/l 
-            - glucose à ${data.glucose} mmol/l 
+            - natrémie à ${d.sodium} mmol/l          
+            - kaliémie à ${d.potassium} mmol/l
+            - chlore à ${d.chlore} mmol/l
+            - protides à ${d.protides} g/l
+            - albumine ${d.albumine} g/l 
+            - glucose à ${d.glucose} mmol/l 
 
 Fonction rénale : 
-            - urée à ${data.uree}
-            - créatinine à ${data.crea}
-            - DFG à ${data.dfg}
+            - urée à ${d.uree}
+            - créatinine à ${d.creatinine}
+            - DFG à ${d.dfg}
 
-- CRP à ${data.crp} mg/l
+- CRP à ${d.crp} mg/l
 
 Enzyme cardiaque : 
-            - Troponine à ${data.tropo}
-            - NT-proBNP à ${data.ntprobnp}
+            - Troponine à ${d.troponine}
+            - NT-proBNP à ${d.ntprobnp}
+            - D-dimères à ${d.d_dimere}
 
 Bilan hépatique 
-            - TGO à ${data.tgo}
-            - TGP à ${data.tgp}
-            - gamma GT à ${data.ggt}
-            - bilirubine totale à ${data.biliT}
-            - bilirubine directe à ${data.biliD}
+            - TGO à ${d.tgo}
+            - TGP à ${d.tgp}
+            - phosphatases alcalines à ${d.pal}
+            - gamma GT à ${d.ggt}
+            - bilirubine totale à ${d.bilirubine_totale}
+            - bilirubine directe à ${d.bilirubine_directe}
 
-- CPK à ${data.cpk}
+- CPK à ${d.cpk}
 
 Bilan d'hémostase
-            - TP ${data.tp}
-            - TCA à ${data.tca}
+            - TP ${d.tp}
+            - TCA à ${d.tca}
 `;
+}
+
+
+// =====================
+// 6. PIPELINE GLOBAL
+// =====================
+function runParser() {
+
+    const raw = document.getElementById("input").value;
+
+    const table = parseTable(raw);
+
+    const data = extractAll(table);
+
+    const output = generateOutput(data);
 
     document.getElementById("output").textContent = output;
 }
