@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Parser Bilan Bio</title>
+<style>
+body { font-family: Arial; max-width: 900px; margin: auto; padding: 20px; }
+textarea { width: 100%; height: 200px; }
+pre { background: #f4f4f4; padding: 15px; white-space: pre-wrap; }
+button { padding: 10px 20px; margin-top: 10px; }
+</style>
+</head>
+
+<body>
+
+<h2>Parser de bilan biologique</h2>
+
+<textarea id="input" placeholder="Colle ton bilan ici..."></textarea>
+<br>
+<button onclick="parseBio()">Générer</button>
+
+<h3>Résultat :</h3>
+<pre id="output"></pre>
+
+<script>
+
+function extractFirst(pattern, text) {
+    const regex = new RegExp(pattern, "gi");
+    const matches = [...text.matchAll(regex)];
+    return matches.length ? matches[0][1] : "";
+}
+
+function parseBio() {
+    const text = document.getElementById("input").value;
+
+    const data = {
+        hb: extractFirst("Hémoglobine[^\\d]*(\\d+\\.?\\d*)", text),
+        vgm: extractFirst("Volume globulaire moyen[^\\d]*(\\d+\\.?\\d*)", text),
+        plaquettes: extractFirst("Plaquettes[^\\d]*(\\d+\\.?\\d*)", text),
+        leucocytes: extractFirst("Leucocytes[^\\d]*(\\d+\\.?\\d*)", text),
+        pnn: extractFirst("Polynucléaires neutrophiles[^%]*(\\d+\\.?\\d*)", text),
+
+        ph: extractFirst("pH[^\\d]*(\\d+\\.?\\d*)", text),
+        po2: extractFirst("pO2[^\\d]*(\\d+\\.?\\d*)", text),
+        pco2: extractFirst("pCO2[^\\d]*(\\d+\\.?\\d*)", text),
+        hco3: extractFirst("Bicarbonates[^\\d]*(\\d+\\.?\\d*)", text),
+        lactates: extractFirst("lactique[^\\d]*(\\d+\\.?\\d*)", text),
+
+        na: extractFirst("Sodium[^\\d]*(\\d+\\.?\\d*)", text),
+        k: extractFirst("Potassium[^\\d]*(\\d+\\.?\\d*)", text),
+        cl: extractFirst("Chlore[^\\d]*(\\d+\\.?\\d*)", text),
+        protides: extractFirst("Protéines[^\\d]*(\\d+\\.?\\d*)", text),
+        albumine: extractFirst("Albumine[^\\d]*(\\d+\\.?\\d*)", text),
+        glucose: extractFirst("Glucose[^\\d]*(\\d+\\.?\\d*)", text),
+
+        uree: extractFirst("Urée[^\\d]*(\\d+\\.?\\d*)", text),
+        crea: extractFirst("Créatinine[^\\d]*(\\d+\\.?\\d*)", text),
+        dfg: extractFirst("DFG[^\\d]*(\\d+\\.?\\d*)", text),
+
+        crp: extractFirst("CRP[^\\d]*(\\d+\\.?\\d*)", text),
+        tropo: extractFirst("Troponine[^\\d]*(\\d+\\.?\\d*)", text),
+        ntprobnp: extractFirst("NT[- ]?PROBNP[^\\d]*(\\d+\\.?\\d*)", text),
+
+        tgo: extractFirst("TGO[^\\d]*(\\d+\\.?\\d*)", text),
+        tgp: extractFirst("TGP[^\\d]*(\\d+\\.?\\d*)", text),
+        ggt: extractFirst("Gamma GT[^\\d]*(\\d+\\.?\\d*)", text),
+        biliT: extractFirst("Bilirubine totale[^\\d]*(\\d+\\.?\\d*)", text),
+        biliD: extractFirst("Bilirubine directe[^\\d]*(\\d+\\.?\\d*)", text),
+
+        cpk: extractFirst("CK[^\\d]*(\\d+\\.?\\d*)", text),
+
+        tp: extractFirst("Taux de Prothrombine[^\\d]*(\\d+\\.?\\d*)", text),
+        tca: extractFirst("Ratio du TCA[^\\d]*(\\d+\\.?\\d*)", text)
+    };
+
+    const output = `
+Numération formule sanguine :
+- hémoglobine à ${data.hb} g/dL    
+            - VGM à ${data.vgm} fl            
+            - plaquettes à ${data.plaquettes} G/L               
+            - leucocytes à ${data.leucocytes} G/L
+            - dont ${data.pnn} % de PNN 
+
+Gazométrie :
+            - pH à ${data.ph}        
+            - pO2 à ${data.po2} mmHg        
+            - pCO2 à ${data.pco2} mmHg        
+            - Bicarbonates à ${data.hco3} mmol/l
+            - Lactates à ${data.lactates} mmol/l
+
+Ionogramme :
+            - natrémie à ${data.na} mmol/l          
+            - kaliémie à ${data.k} mmol/l
+            - chlore à ${data.cl} mmol/l
+            - protides à ${data.protides} g/l
+            - albumine ${data.albumine} g/l 
+            - glucose à ${data.glucose} mmol/l 
+
+Fonction rénale : 
+            - urée à ${data.uree}
+            - créatinine à ${data.crea}
+            - DFG à ${data.dfg}
+
+- CRP à ${data.crp} mg/l
+
+Enzyme cardiaque : 
+            - Troponine à ${data.tropo}
+            - NT-proBNP à ${data.ntprobnp}
+
+Bilan hépatique 
+            - TGO à ${data.tgo}
+            - TGP à ${data.tgp}
+            - gamma GT à ${data.ggt}
+            - bilirubine totale à ${data.biliT}
+            - bilirubine directe à ${data.biliD}
+
+- CPK à ${data.cpk}
+
+Bilan d'hémostase
+            - TP ${data.tp}
+            - TCA à ${data.tca}
+`;
+
+    document.getElementById("output").textContent = output;
+}
+
+</script>
+
+</body>
+</html>
