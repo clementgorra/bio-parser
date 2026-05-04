@@ -82,7 +82,7 @@ const MAPPING = {
     po2: ["pO2 (corrigé par la température)"],
     pco2: ["pCO2 (corrigé par la température)"],
     bicarbonates_gazo: ["Bicarbonates (c)"],
-    lactates: ["Acide lactique"],
+    lactates: ["Acide lactique sur sang artériel"],
 
     sodium: ["Sodium"],
     potassium: ["Potassium"],
@@ -195,17 +195,19 @@ Ionogramme :
             - kaliémie à ${d.potassium} mmol/l
             - chlore à ${d.chlore} mmol/l
             - calcémie à ${d.calcemie} mmol/l
-            - bicarbonates à ${d.bicarbonates} mmol/l
-            - protides à ${d.protides} g/l
-            - albumine ${d.albumine} g/l
-            - glucose à ${d.glucose} mmol/l
-            - osmolarité à ${d.osmolarite} mmol/l
+
+- bicarbonates à ${d.bicarbonates} mmol/l
+- protides à ${d.protides} g/l
+- albumine ${d.albumine} g/l
+- glucose à ${d.glucose} mmol/l
+- osmolarité à ${d.osmolarite} mmol/l
 
 Fonction rénale :
             - urée à ${d.uree} µmol/l
             - créatinine à ${d.creatinine} µmol/l
             - DFG à ${d.dfg} ml/mn
-            - CRP à ${d.crp} mg/l
+
+- CRP à ${d.crp} mg/l
 
 Bilan martial :
             - Ferritine : ${d.ferritine} µg/l
@@ -224,21 +226,20 @@ Hémostase :
             - TCA : ${d.tca}
 
 Hépatique :
-            - TGO : ${d.tgo}
-            - TGP : ${d.tgp}
-            - PAL : ${d.pal}
-            - GGT : ${d.ggt}
+            - TGO : ${d.tgo} UI/l
+            - TGP : ${d.tgp} UI/l
+            - PAL : ${d.pal} UI/l
+            - GGT : ${d.ggt} UI/l
             - bilirubine totale : ${d.bilirubine_totale} µmol/l
             - bilirubine directe : ${d.bilirubine_directe} µmol/l
 
-Autres :
-            - Lipase : ${d.lipase} UI/l
-            - TSH : ${d.tsh} µUI/l
+- Lipase : ${d.lipase} UI/l
+- TSH : ${d.tsh} µUI/l
 
-Vitamines :
-            - B9 : ${d.vitamine_b9} ng/l
-            - B12 : ${d.vitamine_b12} pg/ml
-            - D : ${d.vitamine_d} ng/l
+Bilan vitaminique :
+            - Vitmaine B9 : ${d.vitamine_b9} ng/l
+            - Vitamine B12 : ${d.vitamine_b12} pg/ml
+            - Vitamine D : ${d.vitamine_d} ng/l
 `;
 }
 
