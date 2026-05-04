@@ -25,24 +25,50 @@ button { padding: 10px 20px; margin-top: 10px; }
 <script>
 
 // =====================
-// 1. PARSE TEXTE → TABLE
+// NORMALISATION
+// =====================
+function normalize(str) {
+    return (str || "")
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " ");
+}
+
+// =====================
+// PARSE TABLE
 // =====================
 function parseTable(raw) {
-    const lines = raw.split("\n");
 
-    return lines
+    return raw
+        .split("\n")
         .map(l => l.trim())
         .filter(l => l !== "")
-        .filter(l => !/^\d/.test(l)) // ignore notes
-        .filter(l => !/^_+$/.test(l)) // ignore séparateurs
-        .filter(l => !l.toUpperCase().includes("TECHNIQUE"))
-        .filter(l => !l.toUpperCase().includes("REMARQUE"))
+        .filter(l => !/^\d/.test(l))         // notes
+        .filter(l => !/^_+$/.test(l))        // séparateurs
         .map(l => l.split("¦").map(c => c.trim()));
 }
 
+// =====================
+// INDEX STRICT
+// =====================
+function buildIndex(table) {
+
+    const index = new Map();
+
+    for (let row of table) {
+
+        const key = normalize(row[0]);
+
+        if (!key) continue;
+
+        index.set(key, row);
+    }
+
+    return index;
+}
 
 // =====================
-// 2. MAPPING
+// MAPPING STRICT
 // =====================
 const MAPPING = {
 
@@ -55,37 +81,37 @@ const MAPPING = {
     ph: ["pH (corrigé par la température)"],
     po2: ["pO2 (corrigé par la température)"],
     pco2: ["pCO2 (corrigé par la température)"],
-    bicarbonates_gaz: ["Bicarbonates (c)"],
+    bicarbonates_gazo: ["Bicarbonates (c)"],
     lactates: ["Acide lactique"],
 
-    sodium: ["Sodium", "Sodium sur sang artériel"],
-    potassium: ["Potassium", "Potassium sur sang artériel"],
-    chlore: ["Chlore", "Chlore sur sang artériel"],
-    calcemie: ["Calcium", "Ca2+"],
+    sodium: ["Sodium"],
+    potassium: ["Potassium"],
+    chlore: ["Chlore"],
+    calcemie: ["Ca2+"],
     bicarbonates: ["Bicarbonates"],
-    protides: ["Protéines", "Protéines totales"],
+    protides: ["Protéines"],
     albumine: ["Albumine"],
-    glucose: ["Glucose", "Glucose sur sang artériel"],
+    glucose: ["Glucose"],
     osmolarite: ["Osmolarité"],
 
     uree: ["Urée"],
     creatinine: ["Créatinine"],
-    dfg: ["DFGe", "DFG"],
+    dfg: ["DFGe(CKD-EPI)Form.de Levey AS"],
 
     crp: ["CRP"],
 
     ferritine: ["Ferritine"],
     transferrine: ["Transferrine"],
 
-    cpk: ["CK", "CK totale"],
+    cpk: ["CK totale"],
 
-    troponine: ["Troponine"],
-    ntprobnp: ["NT-PROBNP"],
-    d_dimere: ["D Dimères", "D-Dimères"],
+    troponine: ["Troponine I"],
+    ntprobnp: ["NT-PROBNP (Peptide natriurétique)"],
+    d_dimere: ["D Dimères"],
 
     inr: ["INR"],
     tp: ["Taux de Prothrombine"],
-    tca: ["Ratio du TCA"],
+    tca: ["Ratio du TCA (M/T)"],
 
     tgo: ["TGO"],
     tgp: ["TGP"],
@@ -102,123 +128,122 @@ const MAPPING = {
     vitamine_d: ["Vitamine D"]
 };
 
-
 // =====================
-// 3. EXTRACTION VALEUR
+// EXTRACTION STRICTE
 // =====================
-function findValue(table, labels) {
+function findValueStrict(index, labels) {
 
-    for (let row of table) {
-        const firstCell = row[0] || "";
+    for (let label of labels) {
 
-        for (let label of labels) {
+        const key = normalize(label);
 
-            if (firstCell.toLowerCase().includes(label.toLowerCase())) {
+        if (index.has(key)) {
 
-                // récup toutes les valeurs numériques de la ligne
-                const numbers = row.join(" ").match(/-?\d+[.,]?\d*/g);
+            const row = index.get(key);
 
-                if (numbers) {
-                    return numbers[numbers.length - 1].replace(",", ".");
-                }
+            const numbers = row.join(" ").match(/-?\d+[.,]?\d*/g);
+
+            if (numbers) {
+                return numbers[numbers.length - 1].replace(",", ".");
             }
+
+            return "";
         }
     }
 
     return "";
 }
 
-
 // =====================
-// 4. EXTRACTION COMPLETE
+// EXTRACTION COMPLETE
 // =====================
 function extractAll(table) {
+
+    const index = buildIndex(table);
 
     const result = {};
 
     for (let key in MAPPING) {
-        result[key] = findValue(table, MAPPING[key]);
+        result[key] = findValueStrict(index, MAPPING[key]);
     }
 
     return result;
 }
 
-
 // =====================
-// 5. GENERATION TEXTE FINAL
+// OUTPUT FINAL
 // =====================
 function generateOutput(d) {
 
 return `
 Numération formule sanguine :
-            - hémoglobine à ${d.hb} g/dL    
-            - VGM à ${d.vgm} fl            
-            - plaquettes à ${d.plaquettes} G/L               
+            - hémoglobine à ${d.hb} g/dL
+            - VGM à ${d.vgm} fl
+            - plaquettes à ${d.plaquettes} G/L
             - leucocytes à ${d.leucocytes} G/L
-            - dont ${d.pnn} % de PNN 
+            - dont ${d.pnn} % de PNN
 
 Gazométrie :
-            - pH à ${d.ph}        
-            - pO2 à ${d.po2} mmHg        
-            - pCO2 à ${d.pco2} mmHg        
-            - Bicarbonates à ${d.bicarbonates_gaz} mmol/l
+            - pH à ${d.ph}
+            - pO2 à ${d.po2} mmHg
+            - pCO2 à ${d.pco2} mmHg
+            - Bicarbonates à ${d.bicarbonates_gazo} mmol/l
             - Lactates à ${d.lactates} mmol/l
 
 Ionogramme :
-            - natrémie à ${d.sodium} mmol/l          
+            - natrémie à ${d.sodium} mmol/l
             - kaliémie à ${d.potassium} mmol/l
             - chlore à ${d.chlore} mmol/l
-            - calcémie à ${d.calcemie} mmol/l 
-            - bicarbonates à ${d.bicarbonates} mmol/l  
+            - calcémie à ${d.calcemie} mmol/l
+            - bicarbonates à ${d.bicarbonates} mmol/l
             - protides à ${d.protides} g/l
-- albumine ${d.albumine} g/l 
-            - glucose à ${d.glucose} mmol/l 
-            - osmolarité à ${d.osmolarite} mmol/l 
+            - albumine ${d.albumine} g/l
+            - glucose à ${d.glucose} mmol/l
+            - osmolarité à ${d.osmolarite} mmol/l
 
-Fonction rénale : 
+Fonction rénale :
             - urée à ${d.uree} µmol/l
             - créatinine à ${d.creatinine} µmol/l
-            - débit de filtration glomérulaire à ${d.dfg} ml/mn
-
-- CRP à ${d.crp} mg/l
+            - DFG à ${d.dfg} ml/mn
+            - CRP à ${d.crp} mg/l
 
 Bilan martial :
             - Ferritine : ${d.ferritine} µg/l
             - Transferrine : ${d.transferrine}
 
-- CPK à ${d.cpk} UI/l
+CPK : ${d.cpk} UI/l
 
-Enzyme cardiaque : 
-            - Troponine à ${d.troponine} ng/L
-            - NT-proBNP à ${d.ntprobnp} pg/ml
-            - D-dimères à ${d.d_dimere} ng/ml
+Cardiaque :
+            - Troponine : ${d.troponine} ng/L
+            - NT-proBNP : ${d.ntprobnp} pg/ml
+            - D-dimères : ${d.d_dimere} ng/ml
 
-Bilan d'hémostase
-            - INR à ${d.inr}
-            - TP ${d.tp}
-            - TCA à ${d.tca}   
+Hémostase :
+            - INR : ${d.inr}
+            - TP : ${d.tp}
+            - TCA : ${d.tca}
 
-Bilan hépatique 
-            - TGO à ${d.tgo} UI/l
-            - TGP à ${d.tgp} UI/l
-            - phosphatases alcalines à ${d.pal} UI/l 
-            - gamma GT à ${d.ggt} UI/l
-            - bilirubine totale à ${d.bilirubine_totale} µmol/l
-            - bilirubine directe à ${d.bilirubine_directe} µmol/l 
+Hépatique :
+            - TGO : ${d.tgo}
+            - TGP : ${d.tgp}
+            - PAL : ${d.pal}
+            - GGT : ${d.ggt}
+            - bilirubine totale : ${d.bilirubine_totale} µmol/l
+            - bilirubine directe : ${d.bilirubine_directe} µmol/l
 
-- Lipase à ${d.lipase} UI/l 
-- TSH à ${d.tsh} µUI/l
+Autres :
+            - Lipase : ${d.lipase} UI/l
+            - TSH : ${d.tsh} µUI/l
 
-- Bilan vitaminique : 
-            - vitamine B9 : ${d.vitamine_b9} ng/l
-            - vitamine B12 : ${d.vitamine_b12} pg/ml
-            - Vitamine D : ${d.vitamine_d} ng/l
+Vitamines :
+            - B9 : ${d.vitamine_b9} ng/l
+            - B12 : ${d.vitamine_b12} pg/ml
+            - D : ${d.vitamine_d} ng/l
 `;
 }
 
-
 // =====================
-// 6. PIPELINE GLOBAL
+// PIPELINE
 // =====================
 function runParser() {
 
