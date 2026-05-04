@@ -88,6 +88,20 @@ const MAPPING = {
     ggt: ["Gamma GT"],
     bilirubine_totale: ["Bilirubine totale"],
     bilirubine_directe: ["Bilirubine directe"]
+
+    calcémie: ["Calcium", "Ca2+"],
+    osmolarite: ["Osmolarité"],
+
+    ferritine: ["Ferritine"],
+    transferrine: ["Transferrine"],
+
+    inr: ["INR"],
+    lipase: ["Lipase"],
+    tsh: ["TSH"],
+
+    vitamine_b9: ["Vitamine B9"],
+    vitamine_b12: ["Vitamine B12"],
+    vitamine_d: ["Vitamine D"]
 };
 
 
@@ -139,7 +153,7 @@ function generateOutput(d) {
 
 return `
 Numération formule sanguine :
-- hémoglobine à ${d.hb} g/dL    
+            - hémoglobine à ${d.hb} g/dL    
             - VGM à ${d.vgm} fl            
             - plaquettes à ${d.plaquettes} G/L               
             - leucocytes à ${d.leucocytes} G/L
@@ -156,35 +170,51 @@ Ionogramme :
             - natrémie à ${d.sodium} mmol/l          
             - kaliémie à ${d.potassium} mmol/l
             - chlore à ${d.chlore} mmol/l
+            - calcémie à ${d.calcemie} mmol/l 
+            - bicarbonates à ${d.bicarbonates} mmol/l  
             - protides à ${d.protides} g/l
-            - albumine ${d.albumine} g/l 
+- albumine ${d.albumine} g/l 
             - glucose à ${d.glucose} mmol/l 
+            - osmolarité à ${d.osmolarite} mmol/l 
 
 Fonction rénale : 
-            - urée à ${d.uree}
-            - créatinine à ${d.creatinine}
-            - DFG à ${d.dfg}
+            - urée à ${d.uree} µmol/l
+            - créatinine à ${d.creatinine} µmol/l
+            - débit de filtration glomérulaire à ${d.dfg} ml/mn
 
 - CRP à ${d.crp} mg/l
 
+Bilan martial :
+            - Ferritine : ${d.ferritine} µg/l
+            - Transferrine : ${d.transferrine}
+
+- CPK à ${d.cpk} UI/l
+
 Enzyme cardiaque : 
-            - Troponine à ${d.troponine}
-            - NT-proBNP à ${d.ntprobnp}
-            - D-dimères à ${d.d_dimere}
-
-Bilan hépatique 
-            - TGO à ${d.tgo}
-            - TGP à ${d.tgp}
-            - phosphatases alcalines à ${d.pal}
-            - gamma GT à ${d.ggt}
-            - bilirubine totale à ${d.bilirubine_totale}
-            - bilirubine directe à ${d.bilirubine_directe}
-
-- CPK à ${d.cpk}
+            - Troponine à ${d.troponine} ng/L
+            - NT-proBNP à ${d.ntprobnp} pg/ml
+            - D-dimères à ${d.d_dimere} ng/ml
 
 Bilan d'hémostase
+            - INR à ${d.inr}
             - TP ${d.tp}
-            - TCA à ${d.tca}
+            - TCA à ${d.tca}   
+
+Bilan hépatique 
+            - TGO à ${d.tgo} UI/l
+            - TGP à ${d.tgp} UI/l
+            - phosphatases alcalines à ${d.pal} UI/l 
+            - gamma GT à ${d.ggt} UI/l
+            - bilirubine totale à ${d.bilirubine_totale} µmol/l
+            - bilirubine directe à ${d.bilirubine_directe} µmol/l 
+
+- Lipase à ${d.lipase} UI/l 
+- TSH à ${d.tsh} µUI/l
+
+- Bilan vitaminique : 
+            - vitamine B9 : ${d.vitamine_b9} ng/l
+            - vitamine B12 : ${d.vitamine_b12} pg/ml
+            - Vitamine D : ${d.vitamine_d} ng/l
 `;
 }
 
